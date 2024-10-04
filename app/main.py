@@ -4,25 +4,53 @@ import sys
 # import bencodepy - available if you need it!
 # import requests - available if you need it!
 
-# Examples:
-#
-# - decode_bencode(b"5:hello") -> b"hello"
-# - decode_bencode(b"10:hello12345") -> b"hello12345"
-def decode_bencode(bencoded_value):
-    if chr(bencoded_value[0]).isdigit():
-        first_colon_index = bencoded_value.find(b":")
-        if first_colon_index == -1:
-            raise ValueError("Invalid encoded value")
-        return bencoded_value[first_colon_index+1:]
-    else:
-        raise NotImplementedError("Only strings are supported at the moment")
+def list_maker(bencoded_elements):
+    element_list, bencoded_elements = [], bencoded_elements[1:-1]
+    while bencoded_elements:
+        current_element, bencoded_length = decode_bencode(bencoded_elements)
+        element_list.append(current_element)
+        bencoded_elements = bencoded_elements[bencoded_length:]
+    return element_list
 
+def byte_cleaner(*elements):
+     # bytes to string has the format b'<whatever>', so we have to take the b and the apostrophes out
+    cleaned = []
+    for e in elements:
+        if isinstance(e, bytes): cleaned.append(str(e)[2:-1])
+        else: cleaned.append(e)
+    return tuple(cleaned)
+
+def decode_bencode(bencoded_value):
+    match (delimiter:=chr(bencoded_value[0])):
+        case str() if delimiter.isdigit():
+            first_colon_index = bencoded_value.find(b":")
+            if first_colon_index == -1:
+                raise ValueError("Invalid encoded value")
+            encoded_string_length = int(bencoded_value[:first_colon_index])
+            start, end = first_colon_index + 1, encoded_string_length + first_colon_index + 1
+            return bencoded_value[start:end], end
+
+        case 'i':
+            start, end = 1, bencoded_value.find(b"e")
+            return int(bencoded_value[start:end]), end + 1
+
+        case 'l':
+            return list_maker(bencoded_value), 0
+
+        case 'd':
+            element_dictionary, element_list = {}, list_maker(bencoded_value)
+            i = 0
+            while i < len(element_list):
+                key, value = byte_cleaner(element_list[i], element_list[i+1])
+                element_dictionary[key] = value
+                i += 2
+            return element_dictionary, 0
+
+        case _:
+            raise NotImplementedError("nuh uh")
 
 def main():
     command = sys.argv[1]
-
-    # You can use print statements as follows for debugging, they'll be visible when running tests.
-    print("Logs from your program will appear here!")
 
     if command == "decode":
         bencoded_value = sys.argv[2].encode()
@@ -38,7 +66,7 @@ def main():
             raise TypeError(f"Type not serializable: {type(data)}")
 
         # Uncomment this block to pass the first stage
-        # print(json.dumps(decode_bencode(bencoded_value), default=bytes_to_str))
+        print(json.dumps(decode_bencode(bencoded_value)[0], default=bytes_to_str))
     else:
         raise NotImplementedError(f"Unknown command {command}")
 
