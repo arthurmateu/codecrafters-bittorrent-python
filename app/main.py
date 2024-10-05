@@ -6,7 +6,7 @@ import sys
 
 def list_maker(bencoded_elements):
     element_list, bencoded_elements = [], bencoded_elements[1:-1]
-    while bencoded_elements:
+    while bencoded_elements and bencoded_elements[0] != 'e':
         current_element, bencoded_length = decode_bencode(bencoded_elements)
         element_list.append(current_element)
         bencoded_elements = bencoded_elements[bencoded_length:]
@@ -35,7 +35,7 @@ def decode_bencode(bencoded_value):
             return int(bencoded_value[start:end]), end + 1
 
         case 'l':
-            return list_maker(bencoded_value), 0
+            return list_maker(bencoded_value), len(bencoded_value)
 
         case 'd':
             element_dictionary, element_list = {}, list_maker(bencoded_value)
@@ -44,7 +44,7 @@ def decode_bencode(bencoded_value):
                 key, value = byte_cleaner(element_list[i], element_list[i+1])
                 element_dictionary[key] = value
                 i += 2
-            return element_dictionary, 0
+            return element_dictionary, len(bencoded_value)
 
         case _:
             raise NotImplementedError("nuh uh")
