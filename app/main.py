@@ -5,8 +5,10 @@ import sys
 # import requests - available if you need it!
 
 def list_maker(bencoded_elements):
-    element_list, bencoded_elements = [], bencoded_elements[1:-1]
+    element_list, bencoded_elements = [], bencoded_elements[1:]
+    # TODO: fix the check if youve reached a finished point in the list
     while bencoded_elements and bencoded_elements[0] != 'e':
+        print(bencoded_elements)
         current_element, bencoded_length = decode_bencode(bencoded_elements)
         element_list.append(current_element)
         bencoded_elements = bencoded_elements[bencoded_length:]
