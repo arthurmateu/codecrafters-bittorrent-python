@@ -3,6 +3,7 @@ import sys
 import bencodepy
 
 # import requests - available if you need it!
+bc = bencodepy.Bencode(encoding="utf-8")
 
 def main():
     command = sys.argv[1]
@@ -21,7 +22,7 @@ def main():
             raise TypeError(f"Type not serializable: {type(data)}")
 
         # Uncomment this block to pass the first stage
-        print(json.dumps(bencodepy.decode(bencoded_value), default=bytes_to_str))
+        print(json.dumps(bc.decode(bencoded_value), default=bytes_to_str))
     else:
         raise NotImplementedError(f"Unknown command {command}")
 
